@@ -1,7 +1,7 @@
 # GNN Conversation Graph
 
 #### Owner: Ke Xu
-#### Supervisor: Milan Gritta, Pasquale Minervini
+#### Supervisors: Milan Gritta, Pasquale Minervini
 
 #### MSc Project with Huawei Noah's Ark Lab (London)
 #### Research field: graph neural network, conversation graph, LSTM, NLP
