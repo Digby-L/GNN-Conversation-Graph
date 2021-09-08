@@ -1,6 +1,6 @@
 # GNN Conversation Graph
 
-#### Owner: Ke Xu
+#### Owner (UCL Candidate Number): MJPZ8
 #### Supervisors: Dr. Milan Gritta (Huawei), Dr. Pasquale Minervini (UCL)
 
 #### MSc Project with Huawei Noah's Ark Lab (London)
