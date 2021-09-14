@@ -12,7 +12,7 @@
 -----------------------------------------------------
 
 ### Disclaimer
-The full codes for this project are not provided due to copyright regulations. Codes not available include the construction of conversation graph in data preprocessing, and a few other modelling methods with copyrights owned by Huawei. The core codes for this part refer to the following paper (Gritta et al., 2021) https://arxiv.org/abs/2010.15411 . 
+The full codes for this project are not provided due to copyright regulations. Codes not available include the construction of conversation graph in data preprocessing, and a few other modelling methods with copyrights reserved by Huawei. The core codes for this part refer to the following paper (Gritta et al., 2021) https://arxiv.org/abs/2010.15411 . 
 
 Hence, the current codes in this repository are not capable to carry out full training with error raised due to the above reason. A Jupyter notebook is provided alongside to show the results of a simple testrun. Again, this notebook would need to be run with the pieces of codes censored at the current stage.
 
