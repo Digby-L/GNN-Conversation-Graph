@@ -6,6 +6,7 @@ import torch.nn as nn
 from torch import optim
 import torch.utils.data
 from torch.utils.data import TensorDataset, DataLoader
+from torch_geometric.data import DataLoader as GDataloader
 
 # import sys
 # sys.path.append('../')
@@ -17,7 +18,6 @@ from multiwoz.GNN_utils import SoftBCEWithLogitsLoss, f1, load_checkpoint
 from multiwoz.GNN_utils import CreateDatalist, GAT_emb3, GAT_emb2, GAT_emb1, SageModel3, SageModel2, SageModel1, MLPClassifier
 from multiwoz.GNN_utils import simple_search, validate_model_GNN, evaluate_model_GNN, validate_model_GNN_soft
 
-from torch_geometric.data import GDataLoader
 
 seed = 123456789
 os.environ['PYTHONHASHSEED'] = str(seed)
@@ -121,13 +121,13 @@ test_datalist = CreateDatalist(x_test_GNN, y_test_GNN, edge_index_test)
 # Batch data
 batch_size = 32
 ### Drop the last batch
-train_loader = GDataLoader(train_datalist, batch_size=batch_size, drop_last=True)
-dev_loader = GDataLoader(dev_datalist, batch_size=batch_size, drop_last=True)
-test_loader = GDataLoader(test_datalist, batch_size=batch_size, drop_last=True)
+train_loader = GDataloader(train_datalist, batch_size=batch_size, drop_last=True)
+dev_loader = GDataloader(dev_datalist, batch_size=batch_size, drop_last=True)
+test_loader = GDataloader(test_datalist, batch_size=batch_size, drop_last=True)
 
-# train_loader = GDataLoader(train_datalist, batch_size=batch_size)
-# dev_loader = GDataLoader(dev_datalist, batch_size=batch_size)
-# test_loader = GDataLoader(test_datalist, batch_size=batch_size)
+# train_loader = GDataloader(train_datalist, batch_size=batch_size)
+# dev_loader = GDataloader(dev_datalist, batch_size=batch_size)
+# test_loader = GDataloader(test_datalist, batch_size=batch_size)
 
 print("Graph batch created successfully.")
 
@@ -165,7 +165,7 @@ params = {'batch_size': 32, 'shuffle': True}
 
 ## Choose model
 model_name = ['GAT', 'GSage', 'MeanPool', 'LinearData']
-emb_model_name = 'GAT'
+emb_model_name = 'MeanPool'
 
 ## Graph attention or graph sage
 if emb_model_name == 'GAT':
@@ -212,7 +212,8 @@ elif emb_model_name == 'MeanPool':
                                      torch.tensor(y_test_GNN, dtype=torch.float32))
     no_dupl_test_generator = DataLoader(no_dupl_test_set, **params)
 
-    max_epochs, max_val_f1, patience = 50, 0, 5
+    # max_epochs, max_val_f1, patience = 50, 0, 5
+    max_epochs, max_val_f1, patience = 5, 0, 2
 
 elif emb_model_name == 'LinearData':
     x_train, y_train = train_graph_GNN.generate_standard_data(unique=False)
