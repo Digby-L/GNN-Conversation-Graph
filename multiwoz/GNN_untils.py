@@ -225,7 +225,7 @@ class MLPClassifier(torch.nn.Module):
 
 
 ## Define validation and evaluation functions
-def validate_model_GNN(model, dataloader, convgraph, train_with_soft_loss):
+def validate_model_GNN(model, dataloader, convgraph, dim_target, train_with_soft_loss):
     model.eval()
     if train_with_soft_loss:
         loss_function = SoftBCEWithLogitsLoss()
@@ -241,7 +241,7 @@ def validate_model_GNN(model, dataloader, convgraph, train_with_soft_loss):
             output = model(batch)
             batch_size = batch.num_graphs
 
-            labels = batch.y.reshape(batch_size, 309)
+            labels = batch.y.reshape(batch_size, dim_target)
 
             for out, lab in zip(output, labels):
                 valid_f1s.append(f1((out > 0.0).int(), lab).cpu())
@@ -258,7 +258,7 @@ def validate_model_GNN(model, dataloader, convgraph, train_with_soft_loss):
 
 
 
-def validate_model_GNN_soft(model, dataloader, convgraph, evel_graph, data_simple, train_with_soft_loss, valid_with_soft_F1):
+def validate_model_GNN_soft(model, dataloader, convgraph, evel_graph, data_simple, dim_target, train_with_soft_loss, valid_with_soft_F1):
     model.eval()
     if train_with_soft_loss:
         loss_function = SoftBCEWithLogitsLoss()
@@ -276,7 +276,7 @@ def validate_model_GNN_soft(model, dataloader, convgraph, evel_graph, data_simpl
             batch_size = batch.num_graphs
 
             inputs = data_simple[(count - 1) * batch_size:count * batch_size]
-            labels = batch.y.reshape(batch_size, 309)
+            labels = batch.y.reshape(batch_size, dim_target)
 
             count += 1
 
@@ -300,7 +300,7 @@ def validate_model_GNN_soft(model, dataloader, convgraph, evel_graph, data_simpl
     return np.mean(valid_losses), np.mean(valid_f1s)
 
 
-def evaluate_model_GNN(model, dataloader, data_simple, eval_graph, report=False):
+def evaluate_model_GNN(model, dataloader, data_simple, eval_graph, dim_target, report=False):
     model.eval()
     with torch.no_grad():
         gold_labels = []
@@ -314,7 +314,7 @@ def evaluate_model_GNN(model, dataloader, data_simple, eval_graph, report=False)
             batch_size = batch.num_graphs
 
             inputs = data_simple[(count - 1) * batch_size:count * batch_size]
-            labels = batch.y.reshape(batch_size, 309)
+            labels = batch.y.reshape(batch_size, dim_target)
 
             count += 1
 
