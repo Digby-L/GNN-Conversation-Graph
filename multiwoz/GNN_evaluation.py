@@ -17,7 +17,7 @@ from multiwoz.GNN_untils import SoftBCEWithLogitsLoss, f1, load_checkpoint
 from multiwoz.GNN_untils import CreateDatalist, GAT_emb3, GAT_emb2, GAT_emb1, SageModel3, SageModel2, SageModel1, MLPClassifier
 from multiwoz.GNN_untils import simple_search, validate_model_GNN, evaluate_model_GNN, validate_model_GNN_soft
 
-from torch_geometric.data import DataLoader
+from torch_geometric.data import GDataLoader
 
 seed = 123456789
 os.environ['PYTHONHASHSEED'] = str(seed)
@@ -121,13 +121,13 @@ test_datalist = CreateDatalist(x_test_GNN, y_test_GNN, edge_index_test)
 # Batch data
 batch_size = 32
 ### Drop the last batch
-train_loader = DataLoader(train_datalist, batch_size=batch_size, drop_last=True)
-dev_loader = DataLoader(dev_datalist, batch_size=batch_size, drop_last=True)
-test_loader = DataLoader(test_datalist, batch_size=batch_size, drop_last=True)
+train_loader = GDataLoader(train_datalist, batch_size=batch_size, drop_last=True)
+dev_loader = GDataLoader(dev_datalist, batch_size=batch_size, drop_last=True)
+test_loader = GDataLoader(test_datalist, batch_size=batch_size, drop_last=True)
 
-# train_loader = DataLoader(train_datalist, batch_size=batch_size)
-# dev_loader = DataLoader(dev_datalist, batch_size=batch_size)
-# test_loader = DataLoader(test_datalist, batch_size=batch_size)
+# train_loader = GDataLoader(train_datalist, batch_size=batch_size)
+# dev_loader = GDataLoader(dev_datalist, batch_size=batch_size)
+# test_loader = GDataLoader(test_datalist, batch_size=batch_size)
 
 print("Graph batch created successfully.")
 
@@ -157,15 +157,15 @@ else:
 # dim_input = len(train_graph_GNN.belief_state_to_idx) + len(train_graph_GNN.dialog_act_to_idx)
 # dim_target = len(train_graph_GNN.dialog_act_to_idx)
 
-dim_input = 355
-dim_target = 309
+dim_input = torch.tensor(x_train_GNN[1]).shape[1]
+dim_target = torch.tensor(y_train_GNN[1]).shape[0]
 dim_hidden_sage = 256
 dim_hidden = 256
 params = {'batch_size': 32, 'shuffle': True}
 
 ## Choose model
 model_name = ['GAT', 'GSage', 'MeanPool', 'LinearData']
-emb_model_name = 'MeanPool'
+emb_model_name = 'GAT'
 
 ## Graph attention or graph sage
 if emb_model_name == 'GAT':
@@ -212,8 +212,7 @@ elif emb_model_name == 'MeanPool':
                                      torch.tensor(y_test_GNN, dtype=torch.float32))
     no_dupl_test_generator = DataLoader(no_dupl_test_set, **params)
 
-    # max_epochs, max_val_f1, patience = 50, 0, 5
-    max_epochs, max_val_f1, patience = 5, 0, 2
+    max_epochs, max_val_f1, patience = 50, 0, 5
 
 elif emb_model_name == 'LinearData':
     x_train, y_train = train_graph_GNN.generate_standard_data(unique=False)
@@ -247,7 +246,7 @@ elif emb_model_name == 'LinearData':
 #         outputs = model(batch)
 #         batch_size = batch.num_graphs
 #
-#         labels = batch.y.reshape(batch_size, 309)
+#         labels = batch.y.reshape(batch_size, dim_target)
 #         inputs = batch.x
 #
 #         if train_with_soft_loss:
@@ -262,9 +261,8 @@ elif emb_model_name == 'LinearData':
 #         for out, lab in zip(outputs, labels):
 #             f1s.append(f1((out > 0.0).float(), lab).cpu())
 #
-#     valid_loss, valid_f1 = validate_model_GNN(model, dev_loader, dev_graph_GNN, train_with_soft_loss)
-#     ## Early stop with soft F1
-#     # valid_loss, valid_f1 = validate_model_GNN_soft(model, dev_loader, None, eval_graph_GNN, x_dev_simple,
+#     valid_loss, valid_f1 = validate_model_GNN(model, dev_loader, dev_graph_GNN, dim_target, train_with_soft_loss)
+#     # valid_loss, valid_f1 = validate_model_GNN_soft(model, dev_loader, None, eval_graph_GNN, x_dev_simple, dim_target,
 #     #                                           train_with_soft_loss, True)
 #
 #     # noinspection PyStringFormat
@@ -287,11 +285,11 @@ elif emb_model_name == 'LinearData':
 #
 #
 # print("---------------------- DEVELOPMENT SET REPORT --------------------------")
-# evaluate_model_GNN(model, dev_loader, x_dev_simple, eval_graph_GNN)
+# evaluate_model_GNN(model, dev_loader, x_dev_simple, eval_graph_GNN, dim_target)
 #
 # print("--------------------- DEDUPLICATED TEST SET REPORT -------------------------")
-# evaluate_model_GNN(model, test_loader, x_test_simple, eval_graph_GNN)
-#
+# evaluate_model_GNN(model, test_loader, x_test_simple, eval_graph_GNN, dim_target)
+
 
 
 ##############################################
