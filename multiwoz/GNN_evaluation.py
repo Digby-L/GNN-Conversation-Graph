@@ -18,7 +18,6 @@ from multiwoz.GNN_utils import SoftBCEWithLogitsLoss, f1, load_checkpoint
 from multiwoz.GNN_utils import CreateDatalist, GAT_emb3, GAT_emb2, GAT_emb1, SageModel3, SageModel2, SageModel1, MLPClassifier
 from multiwoz.GNN_utils import simple_search, validate_model_GNN, evaluate_model_GNN, validate_model_GNN_soft
 
-
 seed = 123456789
 os.environ['PYTHONHASHSEED'] = str(seed)
 os.environ['TF_CUDNN_DETERMINISM'] = str(1)
@@ -212,8 +211,7 @@ elif emb_model_name == 'MeanPool':
                                      torch.tensor(y_test_GNN, dtype=torch.float32))
     no_dupl_test_generator = DataLoader(no_dupl_test_set, **params)
 
-    # max_epochs, max_val_f1, patience = 50, 0, 5
-    max_epochs, max_val_f1, patience = 5, 0, 2
+    max_epochs, max_val_f1, patience = 50, 0, 5
 
 elif emb_model_name == 'LinearData':
     x_train, y_train = train_graph_GNN.generate_standard_data(unique=False)
