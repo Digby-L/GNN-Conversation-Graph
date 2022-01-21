@@ -340,11 +340,20 @@ def evaluate_model_GNN(model, dataloader, data_simple, eval_graph, dim_target, r
     model.train()
 
 
-#### Sequential Models
+#### Sequential Data
 
 class LSTM_model(nn.Module):
-    ## [CODES NOT AVAILABLE FOR THIS PART]
 
+    def __init__(self, input_size, output_size):
+        super(LSTM_model, self).__init__()
+        self.lstm = nn.LSTM(input_size, hidden_size=256, batch_first=True)
+        self.hidden_to_logits = nn.Linear(256, output_size)
+        self.relu = nn.ReLU()
+
+    def forward(self, inputs):
+        out, _ = self.lstm(inputs)
+        logits = self.hidden_to_logits(self.relu(out[:, -1, :]))
+        return logits
 
 class Perceptron(torch.nn.Module):
     def __init__(self, input_size, output_size):
@@ -393,18 +402,96 @@ class RNN_model(nn.Module):
 
 class SoftBCEWithLogitsLoss(nn.BCEWithLogitsLoss):
     __constants__ = ['weight', 'pos_weight', 'reduction']
-    ## [CODES NOT AVAILABLE FOR THIS PART]
+
+    def __init__(self, weight=None, size_average=None, reduce=None, reduction='mean', pos_weight=None):
+        super(SoftBCEWithLogitsLoss, self).__init__(size_average, reduce, reduction)
+        self.register_buffer('weight', weight)
+        self.register_buffer('pos_weight', pos_weight)
+
+    def forward(self, input, orig_input, conv_graph):
+        min_targets = []
+        for inp, orig_inp in zip(input, orig_input):
+            valid_targets = conv_graph.get_valid_dialog_acts(orig_inp)
+
+            min_target = None
+            min_mean_loss = None
+            for valid in valid_targets:
+                valid_tens = torch.FloatTensor(valid).cuda()
+                temp_mean_loss = F.binary_cross_entropy_with_logits(inp, valid_tens, self.weight, pos_weight=self.pos_weight, reduction=self.reduction).mean()
+                if min_target is None:
+                    min_target = valid
+                    min_mean_loss = temp_mean_loss.item()
+                elif temp_mean_loss.item() < min_mean_loss:
+                    min_target = valid
+                    min_mean_loss = temp_mean_loss.item()
+            min_targets.append(min_target)
+        min_targets = torch.FloatTensor(min_targets).cuda()
+        return F.binary_cross_entropy_with_logits(input, min_targets, self.weight, pos_weight=self.pos_weight, reduction=self.reduction)
+
 
 def f1(y_pred, y_true):
-    ## [CODES NOT AVAILABLE FOR THIS PART]
+    if y_pred.ndim == 2:
+        y_pred = y_pred.argmax(dim=1)
+
+    tp = (y_true * y_pred).sum().to(torch.float32)
+    fp = ((1 - y_true) * y_pred).sum().to(torch.float32)
+    fn = (y_true * (1 - y_pred)).sum().to(torch.float32)
+
+    epsilon = 1e-7
+    precision = tp / (tp + fp + epsilon)
+    recall = tp / (tp + fn + epsilon)
+    return 2 * (precision * recall) / (precision + recall + epsilon)
 
 
 def validate_model(classifier, data_generator, convgraph, train_with_soft_loss, device):
-    ## [CODES NOT AVAILABLE FOR THIS PART]
+    classifier.eval()
+    if train_with_soft_loss:
+        loss_function = SoftBCEWithLogitsLoss()
+    else:
+        loss_function = nn.BCEWithLogitsLoss()
+    with torch.no_grad():
+        valid_f1s = []
+        valid_losses = []
+        for inputs, labels in data_generator:
+            inputs, labels = inputs.to(device), labels.to(device)
+            output = classifier(inputs)
+
+            for out, lab in zip(output, labels):
+                valid_f1s.append(f1((out > 0.0).int(), lab).cpu())
+            if train_with_soft_loss:
+                loss = loss_function(output, inputs, convgraph)
+            else:
+                loss = loss_function(output, labels)
+            valid_losses.append(loss.data.mean().cpu())
+    classifier.train()
+    return np.mean(valid_losses), np.mean(valid_f1s)
 
 
 def evaluate_model(classifier, data_generator, eval_graph, device, report=False):
-    ## [CODES NOT AVAILABLE FOR THIS PART]
+    classifier.eval()
+    with torch.no_grad():
+        gold_labels = []
+        nearest_gold_labels = []
+        pred_labels = []
+        soft_f1s = []
+        for inputs, labels in data_generator:
+            inputs, labels = inputs.to(device), labels.to(device)
+            output = classifier(inputs)
+
+            for inp, out, lab in zip(inputs, output, labels):
+                y_pred = (out > 0.0).int()
+                pred_labels.append(y_pred.cpu().numpy())
+                gold_labels.append(lab.cpu().numpy())
+                nearest_gold, best_f1 = eval_graph.get_best_f1_score(inp.data.tolist(), y_pred.data.tolist())
+                soft_f1s.append(best_f1)
+                nearest_gold_labels.append(nearest_gold)
+        print("Hard F-Score (exact match): %.3f" % f1_score(y_true=np.array(gold_labels, dtype='float32'), y_pred=np.array(pred_labels, dtype='float32'), average='samples'))
+        print("Soft F-Score (best match): %f" % np.mean(soft_f1s))
+        if report:
+            print(classification_report(y_true=np.array(nearest_gold_labels, dtype='float32'),
+                                        y_pred=np.array(pred_labels, dtype='float32'),
+                                        target_names=eval_graph.dialog_act_to_idx.keys(), digits=3))
+    classifier.train()
 
 
 ##### Simple Search Method
@@ -444,5 +531,4 @@ def simple_search(dataset, data_seen, graph, method):
                 y = eval(dialog_act[1])[46:]
                 y_pred.append(y)
     return y_pred, count_oov
-
 
