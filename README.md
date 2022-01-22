@@ -29,7 +29,7 @@ The complete version will be available and updated when the codes for the above 
 
 **Step 3**: Create empty folders in `main` with names: Data1, Data2, Data3.
 
-**Step 4**: In Pycharm, set the source folder to `UCL-Huawei-MSc-Project-main`.
+**Step 4**: Set the source folder to the `main` folder.
 
 **Step 5**: Run `multiwoz/multiwoz_save_data.py` to save the subgraph data into Data1, Data2, Data3 for later training. (This takes some time to run for depth_limit > 2)
 
